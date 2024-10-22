@@ -1,14 +1,13 @@
-import {TDrawRect} from "./types.ts";
+import {TDrawRect, THandInfo, TUser} from "./types.ts";
 import {config} from "./data.ts";
-import {getNewFigure} from "./utils.ts";
+import {getDrawFigureCords, getNewFigure, touchEvent} from "./utils.ts";
 const gameFieldInfo: {x:number, y:number, color: string}[][] = [];
-let handInfo: {x: number, y: number, object?: any[]}[] = [];
+let handInfo:THandInfo = [];
 
 const canvas: HTMLCanvasElement = document.getElementById('game') as HTMLCanvasElement;
 const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 // let clickEvent
-let isClientClicked = false;
-const clientCord = {x: 0, y:0};
+const user: TUser = {x: 0, y:0, isClicked: false};
 
 const drawRect:TDrawRect = ({x,y,w,h, color})=> {
   ctx.beginPath();
@@ -45,26 +44,18 @@ const initHand =  () => {
 const fillHand = () => {
   const newHand = handInfo.map(elem => {
     const figure = getNewFigure();
-    const xBlocks = figure[0].length;
-    const yBlocks = figure.length;
-    const width = xBlocks * config.HAND_TILE_WIDTH + (xBlocks - 1)*config.HAND_TILE_GAP;
-    const height = yBlocks * config.HAND_TILE_WIDTH + (yBlocks -1)*config.HAND_TILE_GAP;
-    const drawXPos = elem.x + config.PICK_FIELD_WIDTH / 2 - width/2;
-    const drawYPos = elem.y + config.PICK_FIELD_WIDTH / 2 - height/2;
-
-    let x = drawXPos;
-    let y = drawYPos
+    let {x,y, initialX} = getDrawFigureCords(figure, elem);
     const color = '#000'
 
-    const object:any[] = [];
+    const object: {figure: number[][], positions:any[]} = {figure, positions: []};
     figure.forEach(row => {
       row.forEach(elem => {
         if (elem === 1) {
-          object.push({x: x, y: y, color})
+          object.positions.push({x: x, y: y, color})
         }
         x = x + config.HAND_TILE_WIDTH + config.HAND_TILE_GAP;
       });
-      x = drawXPos;
+      x = initialX;
       y = y + config.HAND_TILE_WIDTH + config.HAND_TILE_GAP;
     })
 
@@ -85,27 +76,56 @@ const drawGameField = () => {
       ))}
 
 const drawHand = () => {
-  handInfo.forEach(elem => {
+  handInfo.forEach((elem, id) => {
     drawRect({x: elem.x, y:elem.y, w: config.PICK_FIELD_WIDTH, h: config.PICK_FIELD_WIDTH, color:"#d28f73"});
-    elem.object?.forEach(e => drawRect({x: e.x, y: e.y, w: config.HAND_TILE_WIDTH, h: config.HAND_TILE_WIDTH, color: e.color}))
+    if (user.selectedFigure?.id !== id) {
+      elem.object?.positions.forEach(e => drawRect({x: e.x, y: e.y, w: config.HAND_TILE_WIDTH, h: config.HAND_TILE_WIDTH, color: e.color}))
+    }
   })
 }
 
-canvas.addEventListener("mousedown", () => {
-  isClientClicked = true;
-  console.log('mouseDownEvent');
+const drawSelectedFigure = () => {
+  if(user.isClicked && user.selectedFigure?.figure) {
+    let {x,y, initialX} = getDrawFigureCords(user.selectedFigure?.figure, user, true, true);
+    user.selectedFigure.figure.forEach(row => {
+      row.forEach(cell => {
+        if (cell) {
+          drawRect({x,y,w: config.TILE_WIDTH, h: config.TILE_WIDTH, color: "#000"});
+        }
+        x = x + config.TILE_WIDTH + config.FIELD_GAP;
+      });
+      y = y + config.TILE_WIDTH + config.FIELD_GAP;
+      x = initialX;
+    })
+  }
+}
+
+canvas.addEventListener("touchstart", (event) => {
+  touchEvent(event, user, handInfo);
+});
+canvas.addEventListener("mousedown", (event) => {
+  touchEvent(event, user, handInfo);
 })
 canvas.addEventListener("mouseup", () => {
-  isClientClicked = false;
+  user.isClicked = false;
+  user.selectedFigure = undefined;
   console.log('mouseUpEvent');
 })
+
+canvas.addEventListener("touchend", () => {
+  user.isClicked = false;
+  user.selectedFigure = undefined;
+});
+
 canvas.addEventListener("mousemove", (event) => {
-  if (isClientClicked) {
-    // console.log(event.clientX, event.clientY);
-    clientCord.x = event.clientX;
-    clientCord.y = event.clientY;
-  }
+    user.x = event.clientX;
+    user.y = event.clientY;
 })
+
+canvas.addEventListener("touchmove", (event) => {
+  user.x = event.touches[0].clientX;
+  user.y = event.touches[0].clientY;
+});
 
 
 console.log(gameFieldInfo)
@@ -114,8 +134,8 @@ const draw = () => {
   ctx.clearRect(0,0,canvas.width, canvas.height);
   drawGameField();
   drawHand();
-  if (isClientClicked) {
-    drawRect({x: clientCord.x, y: clientCord.y, w: 50, h: 50, color:"#000000"})
+  if (user.isClicked) {
+    drawSelectedFigure();
   }
 }
 
