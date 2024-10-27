@@ -1,11 +1,17 @@
+import ReactApp from "./React";
 import {TDrawRect, THandInfo, TUser} from "./types.ts";
-import {config} from "./data.ts";
+import {config, getInitConfig} from "./data.ts";
 import {getDrawFigureCords, getNewFigure, touchEvent} from "./utils.ts";
+
+import './styles.css';
 const gameFieldInfo: {x:number, y:number, color: string}[][] = [];
 let handInfo:THandInfo = [];
 
 const canvas: HTMLCanvasElement = document.getElementById('game') as HTMLCanvasElement;
 const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+canvas.width = document.body.clientWidth; //document.width is obsolete
+canvas.height = document.body.clientHeight;
+getInitConfig(canvas);
 // let clickEvent
 const user: TUser = {x: 0, y:0, isClicked: false};
 
@@ -33,7 +39,7 @@ const initGameField = () => {
 
 const initHand =  () => {
   const lastFieldElem = gameFieldInfo[gameFieldInfo.length - 1][0];
-  const y = lastFieldElem.y;
+  const y = lastFieldElem.y + config.TILE_WIDTH + config.FIELD_GAP;
   let x = lastFieldElem.x;
   for(let i = 0; i < config.HAND_FIELD_ELEMS; i++) {
     handInfo.push({x,y})
@@ -123,6 +129,11 @@ canvas.addEventListener("mousemove", (event) => {
 })
 
 canvas.addEventListener("touchmove", (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  // window.scrollTo(0, 0);
+
+
   user.x = event.touches[0].clientX;
   user.y = event.touches[0].clientY;
 });
@@ -145,5 +156,5 @@ function startGame() {
   fillHand();
   setInterval(draw, 10);
 }
-
+ReactApp();
 startGame();

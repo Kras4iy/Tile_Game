@@ -75,6 +75,8 @@ export const touchEvent = (event:TouchEvent | MouseEvent, user:TUser, handInfo: 
     const clientX = Object.prototype.hasOwnProperty.call(event, "clientX") ? (event as MouseEvent).clientX : (event as TouchEvent).touches[0].clientX;
     const clientY = Object.prototype.hasOwnProperty.call(event, "clientY") ? (event as MouseEvent).clientX : (event as TouchEvent).touches[0].clientY;
     user.isClicked = true;
+    user.x = clientX;
+    user.y = clientY;
     const selectedFigure = collisionDetect({x:clientX, y: clientY}, handInfo);
     console.log(selectedFigure);
     if (!!selectedFigure) {
