@@ -1,5 +1,5 @@
-import {config, FIGURES} from "./data.ts";
-import {THandInfo, TUser} from "./types.ts";
+import {COLORS, config, FIGURES} from "./data.ts";
+import {TGameField, THandInfo, TUser} from "./types.ts";
 
 function rotate90(mat: number[][]) {
     const n = mat.length;
@@ -11,7 +11,7 @@ function rotate90(mat: number[][]) {
             res[n - j - 1][i] = mat[i][j];
         }
     }
-    return res.map(row => row.filter(e => typeof e !== "undefined")).filter(row => row.length > 0);;
+    return res.map(row => row.filter(e => typeof e !== "undefined")).filter(row => row.length > 0);
 }
 
 const rotateFigure = (mat: number[][])=> {
@@ -35,8 +35,8 @@ const mirrorFigure = (mat:number[][]) => {
     return newMat;
 }
 export const getNewFigure = () => {
-    const figure = FIGURES[Math.floor(Math.random() * FIGURES.length)]
-    return rotateFigure(mirrorFigure(figure));;
+    const figure = FIGURES[Math.floor(Math.random() * FIGURES.length)];
+    return rotateFigure(mirrorFigure(figure));
 
 }
 
@@ -72,8 +72,8 @@ export const getDrawFigureCords = (figure: number[][], elem: {x: number,y: numbe
 }
 
 export const touchEvent = (event:TouchEvent | MouseEvent, user:TUser, handInfo: THandInfo) => {
-    const clientX = Object.prototype.hasOwnProperty.call(event, "clientX") ? (event as MouseEvent).clientX : (event as TouchEvent).touches[0].clientX;
-    const clientY = Object.prototype.hasOwnProperty.call(event, "clientY") ? (event as MouseEvent).clientX : (event as TouchEvent).touches[0].clientY;
+    const clientX = (event as any).clientX ? (event as MouseEvent).clientX : (event as TouchEvent).touches[0].clientX;
+    const clientY = (event as any).clientY ? (event as MouseEvent).clientY : (event as TouchEvent).touches[0].clientY;
     user.isClicked = true;
     user.x = clientX;
     user.y = clientY;
@@ -84,3 +84,84 @@ export const touchEvent = (event:TouchEvent | MouseEvent, user:TUser, handInfo: 
     }
     console.log('mouseDownEvent');
 }
+
+const getCorrectedSquare = (vertices:Record<string, { x: number, y: number }>,hoveredFields: Record<string, { x: number, y: number, color: string, i: number, j: number }>) => {
+    let squareData: any = {
+        xDiff: Number.MAX_SAFE_INTEGER,
+        yDiff: Number.MAX_SAFE_INTEGER,
+        square: {},
+    };
+    Object.values(hoveredFields).forEach(elem => {
+        const xDiff = Math.abs(elem.x - vertices.A.x);
+        const yDiff = Math.abs(elem.y - vertices.A.y);
+        if (xDiff <= squareData.xDiff && yDiff <= squareData.yDiff) {
+            squareData = {xDiff, yDiff, square: elem};
+        }
+    });
+
+    return squareData.square;
+}
+
+export const getFigureDropPosition = (event: MouseEvent | TouchEvent, user:TUser, gameField:TGameField) => {
+    const clientX = (event as any).clientX ? (event as MouseEvent).clientX : user.x;
+    const clientY = (event as any).clientY ? (event as MouseEvent).clientY : user.y;
+    const touchedFields:{ x: number, y: number, color: string, i: number, j: number }[] = [];
+    if (user.selectedFigure) {
+        let {x,y, initialX} = getDrawFigureCords(user.selectedFigure.figure, {x: clientX, y: clientY}, true, true);
+        user.selectedFigure.figure.forEach(row => {
+            row.forEach(e => {
+                if (e === 1) {
+                    const vertices:Record<string, { x: number, y: number }> = {
+                        A: {x,y},
+                        B: {x: x + config.TILE_WIDTH, y},
+                        C: {x: x + config.TILE_WIDTH, y: y + config.TILE_WIDTH},
+                        D: {x, y: y + config.TILE_WIDTH}
+                    };
+                    const hoveredFields:any = {};
+                    Object.keys(vertices).forEach(key => {
+                        for(let i = 0; i < gameField.length; i ++) {
+                            for(let j = 0; j < gameField[i].length; j++) {
+                                if (gameField[i][j].x < vertices[key].x
+                                    && gameField[i][j].x + config.TILE_WIDTH > vertices[key].x
+                                    && gameField[i][j].y < vertices[key].y
+                                    && gameField[i][j].y + config.TILE_WIDTH > vertices[key].y
+                                ) {
+                                    hoveredFields[key] = {...gameField[i][j], i, j};
+                                    break;
+                                }
+                            }
+                        }
+                    })
+
+                    touchedFields.push(getCorrectedSquare(vertices, hoveredFields));
+                }
+                x = x + config.TILE_WIDTH + config.FIELD_GAP;
+            })
+            y = y + config.TILE_WIDTH + config.FIELD_GAP;
+            x = initialX;
+        })
+    }
+    console.log(touchedFields);
+    return touchedFields;
+}
+
+const checkCollisions = (gameField:TGameField, dropSquares: ReturnType<typeof getFigureDropPosition>) => {
+    let isCollisionDetected = false;
+    dropSquares.forEach(elem => {
+        if (elem.i === undefined || elem.j === undefined || gameField[elem.i][elem.j].isFilled) {
+            isCollisionDetected = true;
+        }
+    })
+
+    return isCollisionDetected;
+}
+
+export const paintField = (event: MouseEvent | TouchEvent, user:TUser, gameField:TGameField) => {
+    const dropSquares = getFigureDropPosition(event, user, gameField);
+    if (!checkCollisions(gameField, dropSquares)) {
+        dropSquares.forEach(elem => {
+            gameField[elem.i][elem.j] = {...gameField[elem.i][elem.j], color: COLORS.tile, isFilled: true};
+        })
+    }
+
+};

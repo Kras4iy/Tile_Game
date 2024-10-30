@@ -21,6 +21,14 @@ export const config = {
     HAND_FIELD_ELEMS
 };
 
+export const COLORS = {
+    //https://colorhunt.co/palette/c6e7ffd4f6fffbfbfbffddae
+    tile: "#CBD2A4",
+    field: "#9A7E6F",
+    shadow: "#E9EED9",
+    hand: "#54473F"
+}
+
 export const getInitConfig = (canvas: HTMLCanvasElement) => {
     const width = canvas.width;
     const height = canvas.height - PICK_FIELD_WIDTH - FIELD_GAP;
@@ -64,9 +72,14 @@ const corner = [
     [1,0]
 ]
 
+const oneSquare = [
+    [1],
+]
+
 export const FIGURES = [
     bigSquare,
     smallSquare,
     knight,
     corner
+    // oneSquare
 ]

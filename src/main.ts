@@ -1,10 +1,10 @@
 import ReactApp from "./React";
-import {TDrawRect, THandInfo, TUser} from "./types.ts";
-import {config, getInitConfig} from "./data.ts";
-import {getDrawFigureCords, getNewFigure, touchEvent} from "./utils.ts";
+import {TDrawRect, TGameField, THandInfo, TUser} from "./types.ts";
+import {COLORS, config, getInitConfig} from "./data.ts";
+import {getDrawFigureCords, getNewFigure, paintField, touchEvent} from "./utils.ts";
 
 import './styles.css';
-const gameFieldInfo: {x:number, y:number, color: string}[][] = [];
+const gameFieldInfo:TGameField = [];
 let handInfo:THandInfo = [];
 
 const canvas: HTMLCanvasElement = document.getElementById('game') as HTMLCanvasElement;
@@ -29,7 +29,7 @@ const initGameField = () => {
   for( let i = 0; i < config.FIELD_AMOUNT; i++) {
     gameFieldInfo.push([]);
     for ( let j = 0; j < config.FIELD_AMOUNT; j++) {
-      gameFieldInfo[i].push({x, y, color: "rgba(0,0,0,0.76)"});
+      gameFieldInfo[i].push({x, y , color: COLORS.field, isFilled: false});
       x = x + config.FIELD_GAP + config.TILE_WIDTH;
     }
     y = y + config.FIELD_GAP + config.TILE_WIDTH;
@@ -51,10 +51,12 @@ const fillHand = () => {
   const newHand = handInfo.map(elem => {
     const figure = getNewFigure();
     let {x,y, initialX} = getDrawFigureCords(figure, elem);
-    const color = '#000'
+    const color = COLORS.tile
 
     const object: {figure: number[][], positions:any[]} = {figure, positions: []};
     figure.forEach(row => {
+      console.log('f',figure);
+      console.log(row);
       row.forEach(elem => {
         if (elem === 1) {
           object.positions.push({x: x, y: y, color})
@@ -83,7 +85,7 @@ const drawGameField = () => {
 
 const drawHand = () => {
   handInfo.forEach((elem, id) => {
-    drawRect({x: elem.x, y:elem.y, w: config.PICK_FIELD_WIDTH, h: config.PICK_FIELD_WIDTH, color:"#d28f73"});
+    drawRect({x: elem.x, y:elem.y, w: config.PICK_FIELD_WIDTH, h: config.PICK_FIELD_WIDTH, color: COLORS.hand});
     if (user.selectedFigure?.id !== id) {
       elem.object?.positions.forEach(e => drawRect({x: e.x, y: e.y, w: config.HAND_TILE_WIDTH, h: config.HAND_TILE_WIDTH, color: e.color}))
     }
@@ -96,7 +98,7 @@ const drawSelectedFigure = () => {
     user.selectedFigure.figure.forEach(row => {
       row.forEach(cell => {
         if (cell) {
-          drawRect({x,y,w: config.TILE_WIDTH, h: config.TILE_WIDTH, color: "#000"});
+          drawRect({x,y,w: config.TILE_WIDTH, h: config.TILE_WIDTH, color: COLORS.tile});
         }
         x = x + config.TILE_WIDTH + config.FIELD_GAP;
       });
@@ -107,18 +109,22 @@ const drawSelectedFigure = () => {
 }
 
 canvas.addEventListener("touchstart", (event) => {
+  console.log('touchstart', event);
   touchEvent(event, user, handInfo);
 });
 canvas.addEventListener("mousedown", (event) => {
+  console.log('mousedown', event);
   touchEvent(event, user, handInfo);
 })
-canvas.addEventListener("mouseup", () => {
+canvas.addEventListener("mouseup", (event) => {
+  paintField(event, user, gameFieldInfo);
   user.isClicked = false;
   user.selectedFigure = undefined;
   console.log('mouseUpEvent');
 })
 
-canvas.addEventListener("touchend", () => {
+canvas.addEventListener("touchend", (event) => {
+  paintField(event, user, gameFieldInfo);
   user.isClicked = false;
   user.selectedFigure = undefined;
 });
