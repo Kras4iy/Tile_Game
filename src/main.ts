@@ -1,5 +1,6 @@
+"use strict"
 import ReactApp from "./React";
-import {TDrawRect, TGameField, THandInfo, TUser} from "./types.ts";
+import { TGameData, TDrawRect, TGameField, THandInfo, TUser, TWindow } from './types.ts';
 import {COLORS, config, getInitConfig} from "./data.ts";
 import {doActions, fillHand, getDrawFigureCords, touchEvent} from "./utils.ts";
 
@@ -7,14 +8,26 @@ import './styles.css';
 const gameFieldInfo:TGameField = [];
 let handInfo:THandInfo = [];
 
+const GameData: TGameData = {
+  score: 0,
+};
+
+(window as any).__GameData__ = GameData;
+
 const canvas: HTMLCanvasElement = document.getElementById('game') as HTMLCanvasElement;
 const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 canvas.width = document.body.clientWidth; //document.width is obsolete
 canvas.height = document.body.clientHeight;
-getInitConfig(canvas);
+getInitConfig(canvas, ctx);
 // let clickEvent
 const user: TUser = {x: 0, y:0, isClicked: false};
 
+
+const drawScore = () => {
+  ctx.fillStyle = COLORS.field;
+  ctx.fillText(`Score: ${(window as any as TWindow).__GameData__.score}`, config.SCORE_X, config.SCORE_Y);
+  config.DEBUG_MODE && drawRect({x: config.SCORE_X, y: config.SCORE_Y, w: 2, h: 2, color: "red"})
+}
 const drawRect:TDrawRect = ({x,y,w,h, color})=> {
   ctx.beginPath();
   ctx.rect(x, y, w, h);
@@ -121,6 +134,7 @@ const draw = () => {
   ctx.clearRect(0,0,canvas.width, canvas.height);
   drawGameField();
   drawHand();
+  drawScore();
   if (user.isClicked) {
     drawSelectedFigure();
   }
@@ -133,5 +147,8 @@ function startGame() {
   // draw();
   setInterval(draw, 10);
 }
-ReactApp();
+if (config.DEBUG_MODE) {
+  ReactApp();
+}
+
 startGame();
