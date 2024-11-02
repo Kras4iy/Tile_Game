@@ -2,7 +2,7 @@
 import ReactApp from "./React";
 import { TGameData, TDrawRect, TGameField, THandInfo, TUser, TWindow } from './types.ts';
 import {COLORS, config, getInitConfig} from "./data.ts";
-import {doActions, fillHand, getDrawFigureCords, touchEvent} from "./utils.ts";
+import {doActions, drawShadow, fillHand, getDrawFigureCords, touchEvent} from "./utils.ts";
 
 import './styles.css';
 const gameFieldInfo:TGameField = [];
@@ -42,7 +42,7 @@ const initGameField = () => {
   for( let i = 0; i < config.FIELD_AMOUNT; i++) {
     gameFieldInfo.push([]);
     for ( let j = 0; j < config.FIELD_AMOUNT; j++) {
-      gameFieldInfo[i].push({x, y , color: COLORS.field, isFilled: false});
+      gameFieldInfo[i].push({x, y , color: COLORS.field, isFilled: false, isShadow: false});
       x = x + config.FIELD_GAP + config.TILE_WIDTH;
     }
     y = y + config.FIELD_GAP + config.TILE_WIDTH;
@@ -81,6 +81,7 @@ const drawSelectedFigure = () => {
     user.selectedFigure.figure.forEach(row => {
       row.forEach(cell => {
         if (cell) {
+          drawRect({x: x-1, y: y-1, w: config.TILE_WIDTH + 2, h: config.TILE_WIDTH + 2, color: COLORS.black})
           drawRect({x,y,w: config.TILE_WIDTH, h: config.TILE_WIDTH, color: COLORS.tile});
         }
         x = x + config.TILE_WIDTH + config.FIELD_GAP;
@@ -137,6 +138,7 @@ const draw = () => {
   drawScore();
   if (user.isClicked) {
     drawSelectedFigure();
+    drawShadow(user, gameFieldInfo, handInfo);
   }
 }
 

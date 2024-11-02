@@ -114,12 +114,12 @@ const isLastSquareMouseDown = (clientX: number, clientY: number, handInfo: THand
     }
 }
 
-export const getFigureDropPosition = (event: MouseEvent | TouchEvent, user:TUser, gameField:TGameField, handInfo: THandInfo): TPlaceFigureOnField | TPutInBuffer => {
-    const clientX = (event as any).clientX ? (event as MouseEvent).clientX : user.x;
-    const clientY = (event as any).clientY ? (event as MouseEvent).clientY : user.y;
+export const getFigureDropPosition = (event: MouseEvent | TouchEvent | undefined , user:TUser, gameField:TGameField, handInfo: THandInfo, isCheckBuffer: boolean = false): TPlaceFigureOnField | TPutInBuffer => {
+    const clientX = (event as any)?.clientX ? (event as MouseEvent).clientX : user.x;
+    const clientY = (event as any)?.clientY ? (event as MouseEvent).clientY : user.y;
     const touchedFields:{ x: number, y: number, color: string, i: number, j: number }[] = [];
     if (user.selectedFigure) {
-        if (isLastSquareMouseDown(clientX, clientY, handInfo, user.selectedFigure.id)) {
+        if (isCheckBuffer && isLastSquareMouseDown(clientX, clientY, handInfo, user.selectedFigure.id)) {
             return {
                 event: 'putInBuffer',
                 figure: user.selectedFigure.figure,
@@ -182,12 +182,24 @@ const checkCollisions = (gameField:TGameField, dropSquares: TPlaceFigureOnField[
     return isCollisionDetected;
 }
 
-export const paintField = (user:TUser, gameField:TGameField, dropSquares: ReturnType<typeof getFigureDropPosition>) => {
+const clearField = (gameField:TGameField) => {
+    for(let i = 0; i < gameField.length; i++) {
+        for(let j = 0;j < gameField[i].length; j++) {
+            if (gameField[i][j].isShadow) {
+                gameField[i][j] = {...gameField[i][j], isShadow: false, color: COLORS.field};
+            }
+        }
+    }
+}
+
+export const paintField = (user:TUser, gameField:TGameField, dropSquares: ReturnType<typeof getFigureDropPosition>, isShadow:boolean = false) => {
     if (dropSquares.event === 'placeFigureOnField' && !checkCollisions(gameField, dropSquares.touchedFields, user.selectedFigure)) {
         const {touchedFields} = dropSquares;
-        increaseScore(touchedFields.length);
+        if (!isShadow) {
+            increaseScore(touchedFields.length);
+        }
         touchedFields.forEach(elem => {
-            gameField[elem.i][elem.j] = {...gameField[elem.i][elem.j], color: COLORS.tile, isFilled: true};
+            gameField[elem.i][elem.j] = {...gameField[elem.i][elem.j], color: isShadow ? COLORS.shadow : COLORS.tile, isFilled: !isShadow, isShadow};
         })
         return true;
     }
@@ -273,8 +285,7 @@ const increaseScore = (value: number) => {
     (window as any as TWindow).__GameData__.score += value;
 }
 export const doActions = (event: MouseEvent | TouchEvent, user:TUser, gameField:TGameField, handInfo: THandInfo) => {
-    const dropSquares = getFigureDropPosition(event, user, gameField, handInfo);
-    console.log(dropSquares);
+    const dropSquares = getFigureDropPosition(event, user, gameField, handInfo, true);
 
     if (dropSquares.event === 'putInBuffer' && user.selectedFigure) {
         fillHandTile(3, handInfo, user.selectedFigure.figure)
@@ -290,4 +301,10 @@ export const doActions = (event: MouseEvent | TouchEvent, user:TUser, gameField:
         fillHand(handInfo);
     }
 
+}
+
+export const drawShadow = (user:TUser, gameField:TGameField, handInfo: THandInfo,) => {
+    const data = getFigureDropPosition(undefined, user, gameField, handInfo) as TPlaceFigureOnField;
+    clearField(gameField);
+    paintField(user, gameField, data, true);
 }

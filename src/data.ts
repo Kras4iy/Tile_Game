@@ -1,7 +1,7 @@
 const FIELD_AMOUNT = 8;
 const FIELD_GAP = 5;
 const TILE_WIDTH = 50;
-const HAND_TILE_WIDTH = TILE_WIDTH/2;
+const HAND_TILE_WIDTH = TILE_WIDTH/2.5;
 const HAND_TILE_GAP = 2;
 const HAND_FIELD_ELEMS = 4;
 const PICK_FIELD_WIDTH = TILE_WIDTH * 2 + FIELD_GAP;
@@ -33,11 +33,12 @@ export const config = {
 };
 
 export const COLORS = {
-    //https://colorhunt.co/palette/c6e7ffd4f6fffbfbfbffddae
+    // https://colorhunt.co/palette/e9eed9cbd2a49a7e6f54473f
     tile: "#CBD2A4",
     field: "#9A7E6F",
     shadow: "#E9EED9",
-    hand: "#54473F"
+    hand: "#54473F",
+    black: "#000",
 }
 
 export const getInitConfig = (canvas: HTMLCanvasElement, ctx:  CanvasRenderingContext2D) => {
