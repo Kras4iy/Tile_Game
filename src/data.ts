@@ -72,6 +72,35 @@ const corner = [
     [1,0]
 ]
 
+const length5 = [
+    [1],
+    [1],
+    [1],
+    [1],
+    [1],
+]
+
+const length2 = [
+    [1],
+    [1],
+]
+
+const length3 = [
+    [1],
+    [1],
+    [1],
+]
+
+const chessBoard = [
+    [1,0],
+    [0,1],
+]
+
+const bridge = [
+    [1,1,1],
+    [1,0,1]
+]
+
 const oneSquare = [
     [1],
 ]
@@ -80,6 +109,11 @@ export const FIGURES = [
     bigSquare,
     smallSquare,
     knight,
-    corner
+    corner,
+    length5,
+    length3,
+    length2,
+    chessBoard,
+    bridge,
     // oneSquare
 ]

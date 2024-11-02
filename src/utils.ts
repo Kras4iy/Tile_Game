@@ -1,18 +1,7 @@
 import {COLORS, config, FIGURES} from "./data.ts";
 import {TGameField, THandInfo, TUser} from "./types.ts";
 
-function rotate90(mat: number[][]) {
-    const n = mat.length;
-
-    const res = Array.from({ length: n }, () => Array(n).fill(0));
-
-    for (let i = 0; i < n; i++) {
-        for (let j = 0; j < n; j++) {
-            res[n - j - 1][i] = mat[i][j];
-        }
-    }
-    return res.map(row => row.filter(e => typeof e !== "undefined")).filter(row => row.length > 0);
-}
+const rotate90 = (matrix: number[][]) => matrix[0].map((_, index) => matrix.map(row => row[index]).reverse())
 
 const rotateFigure = (mat: number[][])=> {
     let newMat = [...mat];
@@ -141,7 +130,6 @@ export const getFigureDropPosition = (event: MouseEvent | TouchEvent, user:TUser
             x = initialX;
         })
     }
-    console.log(touchedFields);
     return touchedFields;
 }
 
@@ -162,6 +150,91 @@ export const paintField = (event: MouseEvent | TouchEvent, user:TUser, gameField
         dropSquares.forEach(elem => {
             gameField[elem.i][elem.j] = {...gameField[elem.i][elem.j], color: COLORS.tile, isFilled: true};
         })
+        return true;
+    }
+    return false;
+};
+
+export const fillHandTile = (handFieldId: number,handInfo: THandInfo) => {
+    if (handInfo[handFieldId]) {
+        const handFieldItem = handInfo[handFieldId];
+        const figure = getNewFigure();
+        let {x, y, initialX} = getDrawFigureCords(figure, handFieldItem);
+        const color = COLORS.tile
+
+        const object: { figure: number[][], positions: any[] } = {figure, positions: []};
+        figure.forEach(row => {
+            row.forEach(elem => {
+                if (elem === 1) {
+                    object.positions.push({x: x, y: y, color})
+                }
+                x = x + config.HAND_TILE_WIDTH + config.HAND_TILE_GAP;
+            });
+            x = initialX;
+            y = y + config.HAND_TILE_WIDTH + config.HAND_TILE_GAP;
+        })
+
+        handInfo[handFieldId] = {
+            x: handFieldItem.x,
+            y: handFieldItem.y,
+            object,
+        }
+    }
+}
+
+export const fillHand = (handInfo: THandInfo) => {
+    handInfo.forEach((_, id) => {fillHandTile(id, handInfo)});
+    console.log(handInfo);
+}
+
+const getIsHandEmpty = (handInfo: THandInfo) => !handInfo.find(elem => !!elem.object);
+
+const detectAndClearFilledRows = (gameField: TGameField) => {
+    const gameFieldSimpleCopy : number[][] = [];
+    let completedRowsCounter = 0;
+
+    gameField.forEach(row => {
+        if (row.find(tile => !tile.isFilled)) {
+            gameFieldSimpleCopy.push(new Array(config.FIELD_AMOUNT).fill(0));
+        } else {
+            gameFieldSimpleCopy.push(new Array(config.FIELD_AMOUNT).fill(1));
+            completedRowsCounter++;
+        }
+    })
+
+    for(let i = 0; i < gameField.length; i++) {
+        let isHasEmptyTile = false;
+        for(let j = 0; j < gameField[i].length; j++) {
+            if (!gameField[j][i].isFilled) {
+                isHasEmptyTile = true
+                break;
+            }
+        }
+        if (!isHasEmptyTile) {
+            completedRowsCounter++;
+            gameFieldSimpleCopy.forEach(row => {
+                row[i] = 1;
+            })
+        }
     }
 
-};
+    for(let i = 0; i < gameFieldSimpleCopy.length; i++) {
+        for(let j = 0;j < gameFieldSimpleCopy[i].length; j++) {
+            if (!!gameFieldSimpleCopy[i][j]) {
+                gameField[i][j].isFilled = false;
+                gameField[i][j].color = COLORS.field;
+            }
+        }
+    }
+}
+export const doActions = (event: MouseEvent | TouchEvent, user:TUser, gameField:TGameField, handInfo: THandInfo) => {
+    const isPainted = paintField(event, user, gameField);
+    if (isPainted && user.selectedFigure) {
+        handInfo[user.selectedFigure.id].object = undefined;
+    }
+    detectAndClearFilledRows(gameField);
+    if (getIsHandEmpty(handInfo)) {
+        fillHand(handInfo);
+    }
+
+}

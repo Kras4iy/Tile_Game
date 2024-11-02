@@ -1,7 +1,7 @@
 import ReactApp from "./React";
 import {TDrawRect, TGameField, THandInfo, TUser} from "./types.ts";
 import {COLORS, config, getInitConfig} from "./data.ts";
-import {getDrawFigureCords, getNewFigure, paintField, touchEvent} from "./utils.ts";
+import {doActions, fillHand, getDrawFigureCords, touchEvent} from "./utils.ts";
 
 import './styles.css';
 const gameFieldInfo:TGameField = [];
@@ -47,36 +47,6 @@ const initHand =  () => {
   }
 }
 
-const fillHand = () => {
-  const newHand = handInfo.map(elem => {
-    const figure = getNewFigure();
-    let {x,y, initialX} = getDrawFigureCords(figure, elem);
-    const color = COLORS.tile
-
-    const object: {figure: number[][], positions:any[]} = {figure, positions: []};
-    figure.forEach(row => {
-      console.log('f',figure);
-      console.log(row);
-      row.forEach(elem => {
-        if (elem === 1) {
-          object.positions.push({x: x, y: y, color})
-        }
-        x = x + config.HAND_TILE_WIDTH + config.HAND_TILE_GAP;
-      });
-      x = initialX;
-      y = y + config.HAND_TILE_WIDTH + config.HAND_TILE_GAP;
-    })
-
-    return {
-      x: elem.x,
-      y: elem.y,
-      object,
-    }
-  });
-
-  handInfo = newHand;
-  console.log(handInfo);
-}
 const drawGameField = () => {
   gameFieldInfo.forEach(value => (
       value.forEach(({x,y, color}) => (
@@ -117,14 +87,14 @@ canvas.addEventListener("mousedown", (event) => {
   touchEvent(event, user, handInfo);
 })
 canvas.addEventListener("mouseup", (event) => {
-  paintField(event, user, gameFieldInfo);
+  doActions(event, user, gameFieldInfo, handInfo);
   user.isClicked = false;
   user.selectedFigure = undefined;
   console.log('mouseUpEvent');
 })
 
 canvas.addEventListener("touchend", (event) => {
-  paintField(event, user, gameFieldInfo);
+  doActions(event, user, gameFieldInfo, handInfo);
   user.isClicked = false;
   user.selectedFigure = undefined;
 });
@@ -159,7 +129,7 @@ const draw = () => {
 function startGame() {
   initGameField();
   initHand();
-  fillHand();
+  fillHand(handInfo);
   setInterval(draw, 10);
 }
 ReactApp();
