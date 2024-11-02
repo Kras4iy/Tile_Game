@@ -4,7 +4,7 @@ import {TGameField, THandInfo, TUser} from "./types.ts";
 const rotate90 = (matrix: number[][]) => matrix[0].map((_, index) => matrix.map(row => row[index]).reverse())
 
 const rotateFigure = (mat: number[][])=> {
-    let newMat = [...mat];
+    let newMat = [...mat.map(el => [...el])];
     const rotateAmount = Math.floor(Math.random() * 4);
     for (let i = 0; i < rotateAmount; i++) {
         newMat = rotate90(newMat);
@@ -14,17 +14,17 @@ const rotateFigure = (mat: number[][])=> {
 }
 
 const mirrorFigure = (mat:number[][]) => {
-    let newMat = [...mat];
+    let newMat = [...mat.map(el => [...el])];
     const isMirror = Math.floor(Math.random() * 2);
 
     if (isMirror) {
-        newMat = newMat.map(row => row.reverse());
+        newMat = [...newMat.map(row => row.reverse())];
     }
 
     return newMat;
 }
 export const getNewFigure = () => {
-    const figure = FIGURES[Math.floor(Math.random() * FIGURES.length)];
+    const figure = [...FIGURES[Math.floor(Math.random() * FIGURES.length)].map(row => [...row])];
     return rotateFigure(mirrorFigure(figure));
 
 }
@@ -67,7 +67,6 @@ export const touchEvent = (event:TouchEvent | MouseEvent, user:TUser, handInfo: 
     user.x = clientX;
     user.y = clientY;
     const selectedFigure = collisionDetect({x:clientX, y: clientY}, handInfo);
-    console.log(selectedFigure);
     if (!!selectedFigure) {
         user.selectedFigure = selectedFigure;
     }
@@ -89,6 +88,18 @@ const getCorrectedSquare = (vertices:Record<string, { x: number, y: number }>,ho
     });
 
     return squareData.square;
+}
+
+const removeDublicates = (touchedFields:any[]) => {
+    const newArray:any[] = [];
+
+    touchedFields.forEach(element => {
+        if(!newArray.find(elem => elem.i === element.i && elem.j === element.j)) {
+            newArray.push(element);
+        }
+    })
+
+    return newArray;
 }
 
 export const getFigureDropPosition = (event: MouseEvent | TouchEvent, user:TUser, gameField:TGameField) => {
@@ -130,23 +141,29 @@ export const getFigureDropPosition = (event: MouseEvent | TouchEvent, user:TUser
             x = initialX;
         })
     }
-    return touchedFields;
+
+    return removeDublicates(touchedFields);
 }
 
-const checkCollisions = (gameField:TGameField, dropSquares: ReturnType<typeof getFigureDropPosition>) => {
+const checkCollisions = (gameField:TGameField, dropSquares: ReturnType<typeof getFigureDropPosition>, selectedFigure: TUser["selectedFigure"]) => {
     let isCollisionDetected = false;
-    dropSquares.forEach(elem => {
-        if (elem.i === undefined || elem.j === undefined || gameField[elem.i][elem.j].isFilled) {
-            isCollisionDetected = true;
+    if (selectedFigure) {
+        const selectedFigureFieldsCount = selectedFigure.figure.reduce((sum, curr) => sum + curr.filter(e => !!e).length,0)
+        if (selectedFigure && selectedFigureFieldsCount !== dropSquares.length) {
+            return true;
         }
-    })
-
+        dropSquares.forEach(elem => {
+            if (elem.i === undefined || elem.j === undefined || gameField[elem.i][elem.j].isFilled) {
+                isCollisionDetected = true;
+            }
+        })
+    }
     return isCollisionDetected;
 }
 
 export const paintField = (event: MouseEvent | TouchEvent, user:TUser, gameField:TGameField) => {
     const dropSquares = getFigureDropPosition(event, user, gameField);
-    if (!checkCollisions(gameField, dropSquares)) {
+    if (!checkCollisions(gameField, dropSquares, user.selectedFigure)) {
         dropSquares.forEach(elem => {
             gameField[elem.i][elem.j] = {...gameField[elem.i][elem.j], color: COLORS.tile, isFilled: true};
         })

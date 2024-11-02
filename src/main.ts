@@ -130,6 +130,7 @@ function startGame() {
   initGameField();
   initHand();
   fillHand(handInfo);
+  // draw();
   setInterval(draw, 10);
 }
 ReactApp();
