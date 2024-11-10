@@ -6,7 +6,7 @@ import {doActions, drawShadow, fillHand, getDrawFigureCords, touchEvent} from ".
 
 import './styles.css';
 const gameFieldInfo:TGameField = [];
-let handInfo:THandInfo = [];
+const handInfo:THandInfo = [];
 
 const GameData: TGameData = {
   score: 0,
@@ -62,9 +62,9 @@ const initHand =  () => {
 
 const drawGameField = () => {
   gameFieldInfo.forEach(value => (
-      value.forEach(({x,y, color}) => (
-          drawRect({x,y,w: config.TILE_WIDTH, h: config.TILE_WIDTH, color})))
-      ))}
+    value.forEach(({x,y, color}) => (
+      drawRect({x,y,w: config.TILE_WIDTH, h: config.TILE_WIDTH, color})))
+  ))}
 
 const drawHand = () => {
   handInfo.forEach((elem, id) => {
@@ -114,8 +114,8 @@ canvas.addEventListener("touchend", (event) => {
 });
 
 canvas.addEventListener("mousemove", (event) => {
-    user.x = event.clientX;
-    user.y = event.clientY;
+  user.x = event.clientX;
+  user.y = event.clientY;
 })
 
 canvas.addEventListener("touchmove", (event) => {
